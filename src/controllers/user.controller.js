@@ -1,42 +1,110 @@
-import User from '../models/user.model.js';
+import User from '../models/user.model.js'
+import {validateUpdateFields} from '../validators/updateUser.validator.js'
 
 export const getUsers = async (req, res, next) => {
-  try {
+    try {
+        const sortType = parseSortType(req.query.sort)
+        const order = parseSortOrder(req.query.order)
 
-  } catch (err) {
-    next(err);
-  }
+        const filter = sortType === ' ' ? {} : {
+            [sortType]: {$exists: true}
+        }
+
+        const project = {_id: 1, fullName: 1, email: 1, age: 1}
+
+        const users = await User.find(filter).sort([[sortType, order]]).select(project)
+
+        return res.status(200).json(users)
+    } catch (err) {
+        res.status(400)
+        next(err)
+    }
 }
 
 export const getUserByIdWithArticles = async (req, res, next) => {
-  try {
+    try {
 
-  } catch (err) {
-    next(err);
-  }
+    } catch (err) {
+        next(err)
+    }
 }
 
 export const createUser = async (req, res, next) => {
-  try {
+    try {
+        const user = new User({
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.email,
+            role: req.body.role,
+            age: req.body.age,
+            numberOfArticles: req.body.numberOfArticles
+        })
 
-  } catch (err) {
-    next(err);
-  }
+        await user.save()
+        res.status(201).json(user)
+    } catch (err) {
+        res.status(400)
+        next(err)
+    }
 }
 
 export const updateUserById = async (req, res, next) => {
-  try {
+    try {
+        const {id: userId} = req.params
+        const project = {firstName: 1, lastName: 1, fullName: 1, age: 1}
 
-  } catch (err) {
-    next(err);
-  }
+        const user = await User.findOne({_id: userId}).select(project)
+        if (!user) {
+            return res.status(404).json({message: 'User not found'})
+        }
+
+        const update = {}
+        const {firstName, lastName, age} = req.body
+
+        if (firstName)
+            update.firstName = firstName.trim()
+
+        if (lastName)
+            update.lastName = lastName.trim()
+
+        if (Number.isInteger(age))
+            update.age = age
+        else
+            throw new Error('age must be an integer')
+
+        validateUpdateFields(update)
+
+        for (const key in update)
+            user[key] = update[key]
+
+        await user.save()
+
+        res.status(200).json(user)
+    } catch (err) {
+        next(err)
+    }
 }
 
 export const deleteUserById = async (req, res, next) => {
-  try {
+    try {
 
-  } catch (err) {
-    next(err);
-  }
+    } catch (err) {
+        next(err)
+    }
 }
 
+const parseSortType = function (type) {
+    if (type !== 'age' && type !== 'fullName' && type !== 'email' && type !== 'createdAt')
+        return ' '
+    return type
+}
+
+const parseSortOrder = function (num) {
+    let result = 1
+
+    if (isFinite(num))
+        result = parseInt(num)
+    if (result !== 1 && result !== -1)
+        return 1
+    return result
+}

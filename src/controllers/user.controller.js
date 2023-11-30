@@ -1,4 +1,4 @@
-import User from '../models/user.model.js'
+import User, {ObjectId} from '../models/user.model.js'
 import {validateUpdateFields} from '../validators/updateUser.validator.js'
 
 export const getUsers = async (req, res, next) => {
@@ -51,36 +51,31 @@ export const createUser = async (req, res, next) => {
 export const updateUserById = async (req, res, next) => {
     try {
         const {id: userId} = req.params
+
+        if (!validateObjectId(userId))
+            throw new Error('Invalid user id')
+
+        const filter = {_id: userId}
         const project = {firstName: 1, lastName: 1, fullName: 1, age: 1}
 
-        const user = await User.findOne({_id: userId}).select(project)
-        if (!user) {
-            return res.status(404).json({message: 'User not found'})
-        }
+        const user = await User.findById(filter).select(project)
+        if (!user)
+            throw new Error('User not found')
 
         const update = {}
-        const {firstName, lastName, age} = req.body
 
-        if (firstName)
-            update.firstName = firstName.trim()
-
-        if (lastName)
-            update.lastName = lastName.trim()
-
-        if (Number.isInteger(age))
-            update.age = age
-        else
-            throw new Error('age must be an integer')
-
-        validateUpdateFields(update)
+        validateUpdateFields(update, req.body)
 
         for (const key in update)
             user[key] = update[key]
+
+        user.updatedAt = Date.now()
 
         await user.save()
 
         res.status(200).json(user)
     } catch (err) {
+        res.status(404)
         next(err)
     }
 }
@@ -108,3 +103,5 @@ const parseSortOrder = function (num) {
         return 1
     return result
 }
+
+const validateObjectId = (id) => ObjectId.isValid(id)

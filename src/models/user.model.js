@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import {validateUpdateFields} from '../validators/updateUser.validator.js'
+export const {Types: {ObjectId}} = mongoose;
 
 const roleEnum = {
     values: ['admin', 'writer', 'guest'],
@@ -57,7 +57,6 @@ userSchema.pre('save', function (next) {
     if (!this.isModified('firstName') && !this.isModified('lastName')) {
         return next()
     }
-
     this.fullName = `${this.firstName} ${this.lastName}`
     next()
 })
@@ -69,7 +68,7 @@ userSchema.pre('validate', function (next) {
     next()
 })
 userSchema.pre('updateOne', function (next) {
-    this.update({}, { $set: { updatedAt: new Date() } })
+    this.set({updatedAt: new Date()})
     next()
 })
 

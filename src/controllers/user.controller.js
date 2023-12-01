@@ -1,5 +1,6 @@
 import User, {ObjectId} from '../models/user.model.js'
 import {validateUpdateFields} from '../validators/updateUser.validator.js'
+import {validateObjectId} from '../validators/objectId.validator.js'
 
 export const getUsers = async (req, res, next) => {
     try {
@@ -23,8 +24,53 @@ export const getUsers = async (req, res, next) => {
 
 export const getUserByIdWithArticles = async (req, res, next) => {
     try {
+        const {id: userId} = req.params
 
+        if (!validateObjectId(userId))
+            throw new Error('Invalid user id')
+
+        const filter = {_id: new ObjectId(userId)}
+
+        const userWithArticles = await User.aggregate([
+            {
+                $match: filter,
+            },
+            {
+                $lookup: {
+                    from: 'articles',
+                    localField: '_id',
+                    foreignField: 'owner',
+                    as: 'articles',
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    fullName: 1,
+                    email: 1,
+                    age: 1,
+                    numberOfArticles: 1,
+                    articles: {
+                        $map: {
+                            input: '$articles',
+                            as: 'article',
+                            in: {
+                                title: '$$article.title',
+                                subtitle: '$$article.subtitle',
+                                createdAt: '$$article.createdAt'
+                            }
+                        }
+                    },
+                },
+            },
+        ])
+
+        if (userWithArticles.length === 0)
+            throw new Error('User not found')
+
+        res.status(200).json(userWithArticles[0])
     } catch (err) {
+        res.status(404)
         next(err)
     }
 }
@@ -87,7 +133,7 @@ export const deleteUserById = async (req, res, next) => {
 }
 
 const parseSortType = function (type) {
-    if (type !== 'age' && type !== 'fullName' && type !== 'email' && type !== 'createdAt')
+    if (type !== 'age' && type !== 'fullName' && type !== 'email' && type !== 'createdAt' && type !== 'numberOfArticles')
         return ' '
     return type
 }
@@ -101,5 +147,3 @@ const parseSortOrder = function (num) {
         return 1
     return result
 }
-
-const validateObjectId = (id) => ObjectId.isValid(id)

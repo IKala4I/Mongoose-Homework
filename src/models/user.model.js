@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
-export const {Types: {ObjectId}} = mongoose;
+
+export const {Types: {ObjectId}} = mongoose
 
 const roleEnum = {
     values: ['admin', 'writer', 'guest'],
@@ -26,7 +27,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         lowercase: true,
-        unique: [true, 'Already exists!'],
+        unique: true,
         match: [/^[\w-]+@([\w-]+\.)+[\w-]{2,4}$/, 'Invalid email format']
     },
     role: {
@@ -54,6 +55,7 @@ const userSchema = new mongoose.Schema({
 })
 
 userSchema.pre('save', function (next) {
+    this.set({updatedAt: new Date()})
     if (!this.isModified('firstName') && !this.isModified('lastName')) {
         return next()
     }
@@ -65,10 +67,6 @@ userSchema.pre('validate', function (next) {
     if (this.age < 0) {
         this.age = 1
     }
-    next()
-})
-userSchema.pre('updateOne', function (next) {
-    this.set({updatedAt: new Date()})
     next()
 })
 

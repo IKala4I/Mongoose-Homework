@@ -69,8 +69,6 @@ export const updateUserById = async (req, res, next) => {
         for (const key in update)
             user[key] = update[key]
 
-        user.updatedAt = Date.now()
-
         await user.save()
 
         res.status(200).json(user)

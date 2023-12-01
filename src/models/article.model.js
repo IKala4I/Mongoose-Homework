@@ -68,6 +68,11 @@ articleSchema.pre('deleteOne',{document:true, query: false}, async function(next
     next()
 })
 
+articleSchema.pre('findOneAndUpdate', function(next){
+    this.set({updatedAt: new Date()})
+    next()
+})
+
 const Article = mongoose.model('Article', articleSchema)
 
 export default Article

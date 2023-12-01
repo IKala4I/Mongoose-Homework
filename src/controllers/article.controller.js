@@ -73,8 +73,28 @@ export const createArticle = async (req, res, next) => {
 
 export const updateArticleById = async (req, res, next) => {
     try {
+        const {id: articleId} = req.params
 
+        if (!validateObjectId(articleId))
+            throw new Error('Invalid article id')
+
+        const filter = {_id: articleId}
+
+        const article = await Article.findById(filter)
+
+        if (!article)
+            throw new Error('Article not found')
+
+        if (!article.owner.equals(req.user.id))
+            return res.status(403).json({message: 'Permission denied'})
+
+        const {title, subtitle, description, category} = req.body
+        const update = {title, subtitle, description, category}
+
+        const updatedArticle = await Article.findByIdAndUpdate(filter, update, {runValidators: true, new: true})
+        res.status(200).json(updatedArticle)
     } catch (err) {
+        res.status(400)
         next(err)
     }
 }
@@ -93,7 +113,7 @@ export const deleteArticleById = async (req, res, next) => {
         if (!article)
             throw new Error('Article not found')
 
-        if (article.owner.equals(req.user.id))
+        if (!article.owner.equals(req.user.id))
             return res.status(403).json({message: 'Permission denied'})
 
         await article.deleteOne()

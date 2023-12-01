@@ -7,7 +7,7 @@ export const getUsers = async (req, res, next) => {
         const sortType = parseSortType(req.query.sort)
         const order = parseSortOrder(req.query.order)
 
-        const filter = sortType === ' ' ? {} : {
+        const filter = sortType === 'createdAt' ? {} : {
             [sortType]: {$exists: true}
         }
 
@@ -149,7 +149,7 @@ export const deleteUserById = async (req, res, next) => {
 
 const parseSortType = function (type) {
     if (type !== 'age' && type !== 'fullName' && type !== 'email' && type !== 'createdAt' && type !== 'numberOfArticles')
-        return ' '
+        return 'createdAt'
     return type
 }
 

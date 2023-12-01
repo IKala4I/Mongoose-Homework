@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import User, {ObjectId} from './user.model.js'
+import User from './user.model.js'
 
 const categoryEnum = {
     values: ['sport', 'games', 'history'],
@@ -25,7 +25,7 @@ const articleSchema = new mongoose.Schema({
         required: true
     },
     owner: {
-        type: ObjectId,
+        type: mongoose.Types.ObjectId,
         ref: 'User',
         required: true
     },
@@ -52,13 +52,10 @@ articleSchema.pre('save', async function (next) {
     if (!owner)
         throw new Error('owner doesn\'t exist')
 
-    next()
-})
-
-articleSchema.post('save', async function () {
-    const owner = await User.findById({_id: this.owner})
     owner.numberOfArticles += 1
     await owner.save()
+
+    next()
 })
 
 const Article = mongoose.model('Article', articleSchema)

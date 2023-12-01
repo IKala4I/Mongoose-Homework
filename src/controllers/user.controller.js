@@ -126,8 +126,23 @@ export const updateUserById = async (req, res, next) => {
 
 export const deleteUserById = async (req, res, next) => {
     try {
+        const {id: userId} = req.params
 
+        if (!validateObjectId(userId))
+            throw new Error('Invalid user id')
+
+        const filter = {_id: userId}
+
+        const user = await User.findById(filter)
+
+        if (!user)
+            throw new Error('User not found')
+
+        await User.deleteOne(filter)
+
+        res.status(200).json(user)
     } catch (err) {
+        res.status(400)
         next(err)
     }
 }

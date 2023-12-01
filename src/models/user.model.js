@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import Article from './article.model.js'
 
 export const {Types: {ObjectId}} = mongoose
 
@@ -75,6 +76,18 @@ userSchema.post('save', function (error, doc, next) {
     if (error.name === 'MongoServerError' && error.code === 11000) {
         next(new Error('A user with this email already exists'))
     } else {
+        next(error)
+    }
+})
+
+userSchema.pre('deleteOne', async function (next) {
+    try {
+        const userId = this.getQuery()['_id']
+
+        await Article.deleteMany({owner: userId})
+
+        next()
+    } catch (error) {
         next(error)
     }
 })

@@ -58,6 +58,16 @@ articleSchema.pre('save', async function (next) {
     next()
 })
 
+articleSchema.pre('deleteOne',{document:true, query: false}, async function(next){
+    const ownerId = this.owner
+    const owner = await User.findById({_id: ownerId})
+
+    owner.numberOfArticles -= 1
+    await owner.save()
+
+    next()
+})
+
 const Article = mongoose.model('Article', articleSchema)
 
 export default Article

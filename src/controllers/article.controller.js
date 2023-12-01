@@ -81,7 +81,23 @@ export const updateArticleById = async (req, res, next) => {
 
 export const deleteArticleById = async (req, res, next) => {
     try {
+        const {id: articleId} = req.params
 
+        if (!validateObjectId(articleId))
+            throw new Error('Invalid article id')
+
+        const filter = {_id: articleId}
+
+        const article = await Article.findById(filter)
+
+        if (!article)
+            throw new Error('Article not found')
+
+        if (article.owner.equals(req.user.id))
+            return res.status(403).json({message: 'Permission denied'})
+
+        await article.deleteOne()
+        res.status(200).json(article)
     } catch (err) {
         next(err)
     }

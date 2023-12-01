@@ -5,7 +5,7 @@ export const authMiddleware = (req, res, next) => {
         if (!userId)
             throw new Error('Unauthorized: Missing user ID')
 
-        req.user = {_id: userId}
+        req.user = {id: userId}
 
         next()
     } catch (err) {

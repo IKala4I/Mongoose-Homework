@@ -15,7 +15,7 @@ export const getArticles = async (req, res, next) => {
 
         res.status(200).json(articles)
     } catch (err) {
-        res.status(400)
+        res.status(500)
         next(err)
     }
 }
@@ -25,14 +25,14 @@ export const getArticleById = async (req, res, next) => {
         const {id: articleId} = req.params
 
         if (!validateObjectId(articleId))
-            throw new Error('Invalid article id')
+            return res.status(400).json({error: 'Invalid article id'})
 
         const filter = {_id: articleId}
 
-        const article = await Article.findById(filter)
+        const article = await Article.findById(filter).lean()
 
         if (!article)
-            throw new Error('Article not found')
+            return res.status(404).json({error: 'Article not found'})
 
         const project = {createdAt: 0, updatedAt: 0}
 
@@ -40,20 +40,20 @@ export const getArticleById = async (req, res, next) => {
 
         res.status(200).json(articleWithOwner)
     } catch (err) {
-        res.status(400)
+        res.status(500)
         next(err)
     }
 }
 
 export const createArticle = async (req, res, next) => {
     try {
-        const ownerId = req.body.owner
+        const {owner: ownerId} = req.body
 
         if (!ownerId)
-            throw new Error('owner is required')
+            return res.status(400).json({error: 'Owner is required'})
 
         if (!validateObjectId(ownerId))
-            throw new Error('Invalid owner id')
+            return res.status(400).json({error: 'Invalid owner id'})
 
         const article = new Article({
             title: req.body.title,
@@ -76,22 +76,22 @@ export const updateArticleById = async (req, res, next) => {
         const {id: articleId} = req.params
 
         if (!validateObjectId(articleId))
-            throw new Error('Invalid article id')
+            return res.status(400).json({error: 'Invalid article id'})
 
         const filter = {_id: articleId}
 
-        const article = await Article.findById(filter)
+        const article = await Article.findById(filter).lean()
 
         if (!article)
-            throw new Error('Article not found')
+            return res.status(404).json({error: 'Article not found'})
 
         if (!article.owner.equals(req.user.id))
-            return res.status(403).json({message: 'Permission denied'})
+            return res.status(403).json({error: 'Permission denied'})
 
         const {title, subtitle, description, category} = req.body
         const update = {title, subtitle, description, category}
 
-        const updatedArticle = await Article.findByIdAndUpdate(filter, update, {runValidators: true, new: true})
+        const updatedArticle = await Article.findByIdAndUpdate(filter, update, {runValidators: true, new: true}).lean()
         res.status(200).json(updatedArticle)
     } catch (err) {
         res.status(400)
@@ -104,14 +104,14 @@ export const deleteArticleById = async (req, res, next) => {
         const {id: articleId} = req.params
 
         if (!validateObjectId(articleId))
-            throw new Error('Invalid article id')
+            return res.status(400).json({error: 'Invalid article id'})
 
         const filter = {_id: articleId}
 
         const article = await Article.findById(filter)
 
         if (!article)
-            throw new Error('Article not found')
+            return res.status(404).json({error: 'Article not found'})
 
         if (!article.owner.equals(req.user.id))
             return res.status(403).json({message: 'Permission denied'})
@@ -119,6 +119,7 @@ export const deleteArticleById = async (req, res, next) => {
         await article.deleteOne()
         res.status(200).json(article)
     } catch (err) {
+        res.status(500)
         next(err)
     }
 }

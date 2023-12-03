@@ -13,7 +13,7 @@ export const getUsers = async (req, res, next) => {
 
         const project = {_id: 1, fullName: 1, email: 1, age: 1}
 
-        const users = await User.find(filter).sort([[sortType, order]]).select(project)
+        const users = await User.find(filter).sort([[sortType, order]]).select(project).lean()
 
         return res.status(200).json(users)
     } catch (err) {
@@ -27,7 +27,7 @@ export const getUserByIdWithArticles = async (req, res, next) => {
         const {id: userId} = req.params
 
         if (!validateObjectId(userId))
-            throw new Error('Invalid user id')
+            return res.status(400).json({ error: 'Invalid user id' })
 
         const filter = {_id: new ObjectId(userId)}
 
@@ -66,11 +66,11 @@ export const getUserByIdWithArticles = async (req, res, next) => {
         ])
 
         if (userWithArticles.length === 0)
-            throw new Error('User not found')
+            return res.status(404).json({ error: 'User not found' });
 
         res.status(200).json(userWithArticles[0])
     } catch (err) {
-        res.status(404)
+        res.status(500)
         next(err)
     }
 }
@@ -99,14 +99,14 @@ export const updateUserById = async (req, res, next) => {
         const {id: userId} = req.params
 
         if (!validateObjectId(userId))
-            throw new Error('Invalid user id')
+            return res.status(400).json({ error: 'Invalid user id' });
 
         const filter = {_id: userId}
         const project = {firstName: 1, lastName: 1, fullName: 1, age: 1}
 
         const user = await User.findById(filter).select(project)
         if (!user)
-            throw new Error('User not found')
+            return res.status(404).json({ error: 'User not found' });
 
         const update = {}
 
@@ -119,7 +119,7 @@ export const updateUserById = async (req, res, next) => {
 
         res.status(200).json(user)
     } catch (err) {
-        res.status(404)
+        res.status(400)
         next(err)
     }
 }
@@ -129,20 +129,20 @@ export const deleteUserById = async (req, res, next) => {
         const {id: userId} = req.params
 
         if (!validateObjectId(userId))
-            throw new Error('Invalid user id')
+            return res.status(400).json({ error: 'Invalid user id' });
 
         const filter = {_id: userId}
 
-        const user = await User.findById(filter)
+        const user = await User.findById(filter).lean()
 
         if (!user)
-            throw new Error('User not found')
+            return res.status(404).json({ error: 'User not found' });
 
         await User.deleteOne(filter)
 
         res.status(200).json(user)
     } catch (err) {
-        res.status(400)
+        res.status(500)
         next(err)
     }
 }
